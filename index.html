@@ -20,7 +20,7 @@
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             margin: 0; padding: 20px;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             min-height: 100vh; color: var(--navy);
         }
 
@@ -59,40 +59,24 @@
         }
         button:hover { background: var(--primary); transform: translateY(-1px); }
 
-        /* Thermometer UI */
+        /* Thermometer */
         .progress-box { text-align: center; }
         .total-amount { font-size: 36px; font-weight: 800; color: var(--navy); margin-bottom: 2px; }
         .goal-subtext { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 40px; }
         .thermo-wrap { position: relative; height: 260px; width: 80px; display: flex; flex-direction: column; align-items: center; }
-        .tube { width: 26px; height: 220px; background: #e2e8f0; border-radius: 20px; position: relative; overflow: hidden; border: 4px solid #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .tube { width: 26px; height: 220px; background: #e2e8f0; border-radius: 20px; position: relative; overflow: hidden; border: 4px solid #fff; }
         .fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: linear-gradient(to top, var(--thermo-red), #f87171); transition: height 2s cubic-bezier(0.4, 0, 0.2, 1); }
         .bulb { width: 60px; height: 60px; background: var(--thermo-red); border-radius: 50%; margin-top: -30px; border: 5px solid #fff; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 24px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); z-index: 2; }
         #percentComplete { margin-top: 25px; font-weight: 800; font-size: 16px; color: var(--primary); text-transform: uppercase; }
 
-        /* --- SUCCESS POP-UP (MODAL) --- */
-        #successModal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
-            z-index: 999; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: white; padding: 40px; border-radius: 24px; text-align: center;
-            max-width: 320px; width: 90%; transform: scale(0.8); transition: 0.3s;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        .success-icon {
-            width: 60px; height: 60px; background: var(--success-green); color: white;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 30px; margin: 0 auto 20px;
-        }
-        .modal-content h3 { margin: 0 0 10px; font-weight: 800; }
-        .modal-content p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 40px; border-radius: 24px; text-align: center; max-width: 320px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
 
-        @media (max-width: 850px) {
-            .dashboard { flex-direction: column; width: 100%; max-width: 450px; }
-            .col-form { border-right: none; border-bottom: 1px solid var(--border); }
-            body { padding: 10px; }
-        }
+        .admin-link { margin-top: 25px; font-size: 11px; color: #94a3b8; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; text-decoration: none; }
+        .admin-link:hover { color: var(--navy); }
+
+        @media (max-width: 850px) { .dashboard { flex-direction: column; width: 100%; max-width: 450px; } .col-form { border-right: none; border-bottom: 1px solid var(--border); } }
     </style>
 </head>
 <body>
@@ -111,10 +95,9 @@
                     <option value="Death">Death (Final Expense)</option>
                     <option value="Health">Health</option>
                     <option value="Auto">Auto</option>
-                    <option value="Other">Other</option>
                 </select>
             </div>
-            <div class="field"><label>Premium Ammount</label><input type="number" name="Premium_Ammount" step="0.01" placeholder="0.00" required></div>
+            <div class="field"><label>Premium Amount</label><input type="number" name="Premium_Ammount" step="0.01" placeholder="0.00" required></div>
             <div class="field">
                 <label>Carrier</label>
                 <select name="Carrier" required>
@@ -134,7 +117,7 @@
         <div class="progress-box">
             <h2>Goal Status</h2>
             <div class="total-amount" id="currentTotal">$0</div>
-            <div class="goal-subtext">of $250,000 Target</div>
+            <div class="goal-subtext">of $<span id="displayGoal">250,000</span> Target</div>
             <div class="thermo-wrap">
                 <div class="tube"><div id="barFill" class="fill"></div></div>
                 <div class="bulb">$</div>
@@ -144,61 +127,80 @@
     </div>
 </div>
 
-<div id="successModal">
-    <div class="modal-content" id="modalBox">
-        <div class="success-icon">✓</div>
+<div class="admin-link" onclick="openAdmin()">Admin Settings</div>
+
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <div style="width: 50px; height: 50px; background: var(--success-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">✓</div>
         <h3>Success!</h3>
-        <p>Your data has been saved securely to the GFI database.</p>
-        <button onclick="closeModal()" style="background: var(--navy);">Done</button>
+        <p>Your data has been saved securely.</p>
+        <button onclick="location.reload()" style="background: var(--navy);">Done</button>
+    </div>
+</div>
+
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <h3>Admin Access</h3>
+        <div id="adminLoginArea">
+            <div class="field"><label>Password</label><input type="password" id="adminPass"></div>
+            <button onclick="checkAdmin()">Login</button>
+        </div>
+        <div id="adminSettingsArea" style="display:none">
+            <div class="field"><label>Update Goal ($)</label><input type="number" id="newGoalInput" placeholder="e.g. 300000"></div>
+            <button onclick="saveAdminChanges()">Apply Changes</button>
+        </div>
+        <button onclick="closeAdmin()" style="background: #94a3b8; margin-top: 10px;">Cancel</button>
     </div>
 </div>
 
 <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyC3o-dPxpI_s5ySxZVSBA7LzALr5CQZMHTHLrh6NrToI96PL6evqTAOolktR9O6dssfg/exec'; 
-    const MONTHLY_TARGET = 250000;
+    const ADMIN_PASSWORD = "GFI2026";
+    let monthlyGoal = localStorage.getItem('gfiGoal') || 250000;
 
-    function refreshData() {
-        fetch(SCRIPT_URL)
-        .then(res => res.json())
-        .then(data => {
+    window.onload = function() {
+        document.getElementById('dateInput').valueAsDate = new Date();
+        document.getElementById('displayGoal').innerText = Number(monthlyGoal).toLocaleString();
+        
+        fetch(SCRIPT_URL).then(res => res.json()).then(data => {
             const total = data.total || 0;
-            const percentage = Math.min((total / MONTHLY_TARGET) * 100, 100).toFixed(1);
+            const pct = Math.min((total / monthlyGoal) * 100, 100).toFixed(1);
             document.getElementById('currentTotal').innerText = "$" + total.toLocaleString();
-            document.getElementById('barFill').style.height = percentage + "%";
-            document.getElementById('percentComplete').innerText = percentage + "% Complete";
+            document.getElementById('barFill').style.height = pct + "%";
+            document.getElementById('percentComplete').innerText = pct + "% Complete";
         });
+    };
+
+    function openAdmin() { document.getElementById('adminModal').style.display = 'flex'; }
+    function closeAdmin() { 
+        document.getElementById('adminModal').style.display = 'none'; 
+        document.getElementById('adminLoginArea').style.display = 'block';
+        document.getElementById('adminSettingsArea').style.display = 'none';
+        document.getElementById('adminPass').value = '';
     }
 
-    window.onload = refreshData;
-    document.getElementById('dateInput').valueAsDate = new Date();
+    function checkAdmin() {
+        if(document.getElementById('adminPass').value === ADMIN_PASSWORD) {
+            document.getElementById('adminLoginArea').style.display = 'none';
+            document.getElementById('adminSettingsArea').style.display = 'block';
+        } else { alert("Incorrect Password"); }
+    }
 
-    document.getElementById('gfiForm').addEventListener('submit', e => {
+    function saveAdminChanges() {
+        const val = document.getElementById('newGoalInput').value;
+        if(val) {
+            localStorage.setItem('gfiGoal', val);
+            location.reload();
+        }
+    }
+
+    document.getElementById('gfiForm').onsubmit = e => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true; btn.innerText = "Saving...";
-
         fetch(SCRIPT_URL, { method: 'POST', body: new FormData(e.target)})
-        .then(() => { 
-            // Show Pop-up
-            const modal = document.getElementById('successModal');
-            modal.style.display = 'flex';
-            setTimeout(() => { document.getElementById('modalBox').style.transform = 'scale(1)'; }, 10);
-            
-            // Reset Form
-            document.getElementById('gfiForm').reset();
-            document.getElementById('dateInput').valueAsDate = new Date();
-            btn.disabled = false; btn.innerText = "Submit To Database";
-            
-            // Refresh Thermometer without reloading page
-            refreshData();
-        });
-    });
-
-    function closeModal() {
-        document.getElementById('modalBox').style.transform = 'scale(0.8)';
-        setTimeout(() => { document.getElementById('successModal').style.display = 'none'; }, 200);
-    }
+        .then(() => { document.getElementById('successModal').style.display = 'flex'; });
+    };
 </script>
-
 </body>
 </html>
