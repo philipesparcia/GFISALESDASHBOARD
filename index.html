@@ -142,7 +142,7 @@
         <div class="progress-box">
             <h2>Goal Status</h2>
             <div class="total-amount" id="currentTotal">0</div>
-            <div class="goal-subtext">of <span id="displayGoal">250,000</span> Target Points</div>
+            <div class="goal-subtext">of <span id="displayGoal">---</span> Target Points</div>
             <div class="thermo-wrap">
                 <div class="tube"><div id="barFill" class="fill"></div></div>
                 <div class="bulb">P</div>
@@ -158,7 +158,7 @@
     <div class="modal-content">
         <div style="width: 50px; height: 50px; background: var(--success-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">✓</div>
         <h3>Success!</h3>
-        <p>Amazing progress! Keep that momentum going—you’ve got this!</p>
+        <p>Production data saved.</p>
         <button onclick="location.reload()" style="background: var(--navy);">Done</button>
     </div>
 </div>
@@ -171,42 +171,39 @@
             <button onclick="checkAdmin()">Login</button>
         </div>
         <div id="adminSettingsArea" style="display:none">
-            <div class="field"><label>Update Goal Points</label><input type="number" id="newGoalInput" placeholder="e.g. 300000"></div>
-            <button onclick="saveAdminChanges()">Apply Changes</button>
+            <div class="field"><label>New Master Goal</label><input type="number" id="newGoalInput" placeholder="e.g. 500000"></div>
+            <button id="updateGoalBtn" onclick="saveAdminChanges()">Update Goal For All</button>
         </div>
         <button onclick="closeAdmin()" style="background: #94a3b8; margin-top: 10px;">Cancel</button>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6wizPHbHVTOWe4Df3zG8RrzrYW4rPvBNg9Mwuy3cyaiwdAspwXdFzbJ5_lsPR2dQaHg/exec'; 
+    // MAKE SURE THIS IS YOUR LATEST DEPLOYMENT URL
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzhzp_JhS_3sfWgI3Z7wN1AhwP9h5ntzOkaKncLldNKsP7DNMmUa-v-VjxbbpCDmbfrA/exec'; 
     const ADMIN_PASSWORD = "GFI2026";
-    let monthlyGoal = localStorage.getItem('gfiGoal') || 250000;
 
     window.onload = function() {
         document.getElementById('dateInput').valueAsDate = new Date();
-        document.getElementById('displayGoal').innerText = Number(monthlyGoal).toLocaleString();
-        
         const savedName = localStorage.getItem('lastAgentName');
         if (savedName) document.getElementById('agentInput').value = savedName;
 
         fetch(SCRIPT_URL).then(res => res.json()).then(data => {
             const total = data.total || 0;
-            const pct = Math.min((total / monthlyGoal) * 100, 100).toFixed(1);
+            const masterGoal = data.goal || 250000;
             
+            const pct = Math.min((total / masterGoal) * 100, 100).toFixed(1);
+            
+            document.getElementById('displayGoal').innerText = Number(masterGoal).toLocaleString();
             document.getElementById('currentTotal').innerText = total.toLocaleString();
             document.getElementById('barFill').style.height = pct + "%";
             document.getElementById('percentComplete').innerText = pct + "% Complete";
 
-            if (total >= monthlyGoal) {
+            if (total >= masterGoal) {
                 document.getElementById('congratsOverlay').style.display = 'flex';
             }
-        }).catch(err => console.log("Fetch Error: Verify Script Deployment"));
+        }).catch(err => console.log("Fetch Error"));
     };
-
-    function hideCongrats() {
-        document.getElementById('congratsOverlay').style.display = 'none';
-    }
 
     function openAdmin() { document.getElementById('adminModal').style.display = 'flex'; }
     function closeAdmin() { 
@@ -224,12 +221,25 @@
     }
 
     function saveAdminChanges() {
-        const val = document.getElementById('newGoalInput').value;
-        if(val) {
-            localStorage.setItem('gfiGoal', val);
+        const newVal = document.getElementById('newGoalInput').value;
+        const btn = document.getElementById('updateGoalBtn');
+        if(!newVal) return;
+
+        btn.disabled = true; btn.innerText = "Updating Sheet...";
+
+        // Send the new goal to the Sheet (Cell G1)
+        fetch(SCRIPT_URL + "?updateGoal=" + newVal, { method: 'POST' })
+        .then(() => {
+            alert("Goal updated successfully for all users!");
             location.reload();
-        }
+        })
+        .catch(err => {
+            alert("Error updating goal.");
+            btn.disabled = false; btn.innerText = "Update Goal For All";
+        });
     }
+
+    function hideCongrats() { document.getElementById('congratsOverlay').style.display = 'none'; }
 
     document.getElementById('gfiForm').onsubmit = e => {
         e.preventDefault();
@@ -240,7 +250,7 @@
         fetch(SCRIPT_URL, { method: 'POST', body: new FormData(e.target)})
         .then(() => { document.getElementById('successModal').style.display = 'flex'; })
         .catch(err => {
-            alert("Submission failed. Ensure script is deployed for 'Anyone'.");
+            alert("Submission failed.");
             btn.disabled = false; btn.innerText = "Submit To Database";
         });
     };
