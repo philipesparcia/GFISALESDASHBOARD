@@ -14,6 +14,7 @@
             --text-muted: #64748b;
             --thermo-red: #ef4444;
             --success-green: #10b981;
+            --gold: #fbbf24;
         }
 
         body {
@@ -38,7 +39,7 @@
 
         .col { padding: 50px; flex: 1; }
         .col-form { border-right: 1px solid var(--border); }
-        .col-stats { background-color: var(--bg-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .col-stats { background-color: var(--bg-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
         h2 { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--navy); margin-bottom: 30px; display: flex; align-items: center; }
         h2::before { content: ""; width: 4px; height: 18px; background: var(--primary); margin-right: 10px; border-radius: 2px; }
@@ -59,8 +60,7 @@
         }
         button:hover { background: var(--primary); transform: translateY(-1px); }
 
-        /* Thermometer */
-        .progress-box { text-align: center; }
+        /* Thermometer Display */
         .total-amount { font-size: 36px; font-weight: 800; color: var(--navy); margin-bottom: 2px; }
         .goal-subtext { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 40px; }
         .thermo-wrap { position: relative; height: 260px; width: 80px; display: flex; flex-direction: column; align-items: center; }
@@ -69,11 +69,21 @@
         .bulb { width: 60px; height: 60px; background: var(--thermo-red); border-radius: 50%; margin-top: -30px; border: 5px solid #fff; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 24px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); z-index: 2; }
         #percentComplete { margin-top: 25px; font-weight: 800; font-size: 16px; color: var(--primary); text-transform: uppercase; }
 
-        /* Modals */
+        /* Congrats Overlay */
+        #congratsOverlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; text-align: center; padding: 20px; box-sizing: border-box;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .trophy { font-size: 60px; margin-bottom: 15px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 40px; border-radius: 24px; text-align: center; max-width: 320px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
 
-        .admin-link { margin-top: 25px; font-size: 11px; color: #94a3b8; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; text-decoration: none; }
+        .admin-link { margin-top: 25px; font-size: 11px; color: #94a3b8; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         .admin-link:hover { color: var(--navy); }
 
         @media (max-width: 850px) { .dashboard { flex-direction: column; width: 100%; max-width: 450px; } .col-form { border-right: none; border-bottom: 1px solid var(--border); } }
@@ -83,44 +93,62 @@
 
 <div class="dashboard">
     <div class="col col-form">
-        <h2>Policy Entry</h2>
+        <h2>Production Entry</h2>
         <form id="gfiForm">
             <div class="field"><label>Date</label><input type="date" name="Date" id="dateInput" required></div>
-            <div class="field"><label>Agent Name</label><input type="text" name="Agent_Name" placeholder="Full Name" required></div>
-            <div class="field">
-                <label>Policy Type</label>
-                <select name="Policy" required>
-                    <option value="" disabled selected>Select Type</option>
-                    <option value="Life">Life</option>
-                    <option value="Death">Death (Final Expense)</option>
-                    <option value="Health">Health</option>
-                    <option value="Auto">Auto</option>
-                </select>
-            </div>
-            <div class="field"><label>Premium Amount</label><input type="number" name="Premium_Ammount" step="0.01" placeholder="0.00" required></div>
+            <div class="field"><label>Agent Name</label><input type="text" name="Agent_Name" id="agentInput" placeholder="Full Name" required></div>
+            
             <div class="field">
                 <label>Carrier</label>
                 <select name="Carrier" required>
                     <option value="" disabled selected>Select Carrier</option>
-                    <option value="Geico">Geico</option>
-                    <option value="Progressive">Progressive</option>
-                    <option value="State Farm">State Farm</option>
-                    <option value="National General">National General</option>
-                    <option value="Other">Other</option>
+                    <option value="Corebridge">Corebridge</option>
+                    <option value="Ethos">Ethos</option>
+                    <option value="American Equity">American Equity</option>
+                    <option value="North American">North American</option>
+                    <option value="ANICO">ANICO</option>
+                    <option value="Foresters">Foresters</option>
+                    <option value="Fidelity & Guaranty">Fidelity & Guaranty</option>
+                    <option value="Mutual of Omaha">Mutual of Omaha</option>
                 </select>
             </div>
+
+            <div class="field">
+                <label>Product</label>
+                <select name="Product" required>
+                    <option value="" disabled selected>Select Product</option>
+                    <option value="Indexed UL">Indexed UL</option>
+                    <option value="Indexed Annuity">Indexed Annuity</option>
+                    <option value="F&G Pathsetter">F&G Pathsetter</option>
+                    <option value="Term">Term</option>
+                    <option value="IUL">IUL</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Points</label>
+                <input type="number" name="Points" step="0.01" placeholder="0.00" required>
+            </div>
+            
             <button type="submit" id="submitBtn">Submit To Database</button>
         </form>
     </div>
 
     <div class="col col-stats">
+        <div id="congratsOverlay">
+            <div class="trophy">🏆</div>
+            <h3 style="margin: 0; color: var(--navy); font-weight: 800;">TARGET REACHED!</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Congratulations Team GFI!</p>
+            <button onclick="hideCongrats()" style="padding: 10px; font-size: 11px; width: auto; background: var(--navy);">View Progress</button>
+        </div>
+
         <div class="progress-box">
-            <h2>Goal Status</h2>
-            <div class="total-amount" id="currentTotal">$0</div>
-            <div class="goal-subtext">of $<span id="displayGoal">250,000</span> Target</div>
+            <h2>Goal Points</h2>
+            <div class="total-amount" id="currentTotal">0</div>
+            <div class="goal-subtext">of <span id="displayGoal">250,000</span> Target Points</div>
             <div class="thermo-wrap">
                 <div class="tube"><div id="barFill" class="fill"></div></div>
-                <div class="bulb">$</div>
+                <div class="bulb">P</div>
             </div>
             <div id="percentComplete">0% Complete</div>
         </div>
@@ -133,7 +161,7 @@
     <div class="modal-content">
         <div style="width: 50px; height: 50px; background: var(--success-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">✓</div>
         <h3>Success!</h3>
-        <p>Your data has been saved securely.</p>
+        <p>Amazing progress! Keep that momentum going—you’ve got this!.</p>
         <button onclick="location.reload()" style="background: var(--navy);">Done</button>
     </div>
 </div>
@@ -146,7 +174,7 @@
             <button onclick="checkAdmin()">Login</button>
         </div>
         <div id="adminSettingsArea" style="display:none">
-            <div class="field"><label>Update Goal ($)</label><input type="number" id="newGoalInput" placeholder="e.g. 300000"></div>
+            <div class="field"><label>Update Goal Points</label><input type="number" id="newGoalInput" placeholder="e.g. 300000"></div>
             <button onclick="saveAdminChanges()">Apply Changes</button>
         </div>
         <button onclick="closeAdmin()" style="background: #94a3b8; margin-top: 10px;">Cancel</button>
@@ -154,7 +182,8 @@
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyL7vY1JIGEaTTu3XBVb5UVGBQMXsryjFkGidtaGZJfcBNBjDk5lD4WP6s-6wSQk3Y3NQ/exec'; 
+    // MAKE SURE TO UPDATE THIS WITH YOUR NEW ACCOUNT URL
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7bm7FrC1LklS1mdIZlPv866hdepy1uf-QoKy4O5ZcaUq36xvtfa4l8TSXmA1MguL6CA/exec'; 
     const ADMIN_PASSWORD = "GFI2026";
     let monthlyGoal = localStorage.getItem('gfiGoal') || 250000;
 
@@ -162,14 +191,27 @@
         document.getElementById('dateInput').valueAsDate = new Date();
         document.getElementById('displayGoal').innerText = Number(monthlyGoal).toLocaleString();
         
+        const savedName = localStorage.getItem('lastAgentName');
+        if (savedName) document.getElementById('agentInput').value = savedName;
+
         fetch(SCRIPT_URL).then(res => res.json()).then(data => {
             const total = data.total || 0;
             const pct = Math.min((total / monthlyGoal) * 100, 100).toFixed(1);
-            document.getElementById('currentTotal').innerText = "$" + total.toLocaleString();
+            
+            document.getElementById('currentTotal').innerText = total.toLocaleString();
             document.getElementById('barFill').style.height = pct + "%";
             document.getElementById('percentComplete').innerText = pct + "% Complete";
-        });
+
+            // CHECK FOR CONGRATS
+            if (total >= monthlyGoal) {
+                document.getElementById('congratsOverlay').style.display = 'flex';
+            }
+        }).catch(err => console.log("Fetch Error"));
     };
+
+    function hideCongrats() {
+        document.getElementById('congratsOverlay').style.display = 'none';
+    }
 
     function openAdmin() { document.getElementById('adminModal').style.display = 'flex'; }
     function closeAdmin() { 
@@ -197,9 +239,15 @@
     document.getElementById('gfiForm').onsubmit = e => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
+        localStorage.setItem('lastAgentName', document.getElementById('agentInput').value);
         btn.disabled = true; btn.innerText = "Saving...";
+        
         fetch(SCRIPT_URL, { method: 'POST', body: new FormData(e.target)})
-        .then(() => { document.getElementById('successModal').style.display = 'flex'; });
+        .then(() => { document.getElementById('successModal').style.display = 'flex'; })
+        .catch(err => {
+            alert("Submission failed.");
+            btn.disabled = false; btn.innerText = "Submit To Database";
+        });
     };
 </script>
 </body>
