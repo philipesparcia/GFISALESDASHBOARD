@@ -107,8 +107,8 @@
                     <option value="Foresters">Foresters</option>
                     <option value="Fidelity & Guaranty">Fidelity & Guaranty</option>
                     <option value="Mutual of Omaha">Mutual of Omaha</option>
-		    <option value="NLG">NLG</option>
-		    <option value="AuguStar">AuguStar</option>
+                    <option value="NLG">NLG</option>
+                    <option value="AuguStar">AuguStar</option>
                 </select>
             </div>
 
@@ -120,9 +120,9 @@
                     <option value="Indexed Annuity">Indexed Annuity</option>
                     <option value="F&G Pathsetter">F&G Pathsetter</option>
                     <option value="Term">Term</option>
-		    <option value="Whole Life">Whole Life</option>
+                    <option value="Whole Life">Whole Life</option>
                     <option value="IUL">IUL</option>
-		    <option value="Final Expense">Final Expense</option>	
+                    <option value="Final Expense">Final Expense</option>    
                 </select>
             </div>
 
@@ -183,7 +183,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzhzp_JhS_3sfWgI3Z7wN1AhwP9h5ntzOkaKncLldNKsP7DNMmUa-v-VjxbbpCDmbfrA/exec'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygavYcJze-VXy2ITI1G2GZ8ukaBKoFYFkQbYnC58Ei9aPV5Dg_XBW0Fz_s_-tLG9w7uA/exec'; 
     const ADMIN_PASSWORD = "GFI2026";
 
     window.onload = function() {
@@ -246,17 +246,39 @@
     document.getElementById('gfiForm').onsubmit = e => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
-        localStorage.setItem('lastAgentName', document.getElementById('agentInput').value);
-        btn.disabled = true; btn.innerText = "Saving...";
+        const agentName = document.getElementById('agentInput').value;
+        localStorage.setItem('lastAgentName', agentName);
+        btn.disabled = true; 
+        btn.innerText = "Saving...";
         
-        fetch(SCRIPT_URL, { method: 'POST', body: new FormData(e.target)})
-        .then(() => { 
-            // FIXED: Corrected style.display typo
-            document.getElementById('successModal').style.display = 'flex'; 
+        const payload = {
+            Date: document.getElementById('dateInput').value,
+            Agent_Name: agentName,
+            Carrier: e.target.Carrier.value,
+            Product: e.target.Product.value,
+            Points: e.target.Points.value
+        };
+
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            }
+        })
+        .then(res => res.json())
+        .then(data => { 
+            if (data.result === "success") {
+                document.getElementById('successModal').style.display = 'flex'; 
+            } else {
+                throw new Error(data.message || "Unknown error");
+            }
         })
         .catch(err => {
+            console.error(err);
             alert("Submission failed.");
-            btn.disabled = false; btn.innerText = "Submit To Database";
+            btn.disabled = false; 
+            btn.innerText = "Submit To Database";
         });
     };
 </script>
