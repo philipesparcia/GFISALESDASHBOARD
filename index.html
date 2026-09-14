@@ -59,11 +59,11 @@
         }
         button:hover { background: var(--primary); transform: translateY(-1px); }
 
-        .total-amount { font-size: 36px; font-weight: 800; color: var(--navy); margin-bottom: 2px; }
+        .total-amount { font-size: 32px; font-weight: 800; color: var(--navy); margin-bottom: 2px; }
         .goal-subtext { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 40px; }
         .thermo-wrap { position: relative; height: 260px; width: 80px; display: flex; flex-direction: column; align-items: center; }
         .tube { width: 26px; height: 220px; background: #e2e8f0; border-radius: 20px; position: relative; overflow: hidden; border: 4px solid #fff; }
-        .fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: linear-gradient(to top, var(--thermo-red), #f87171); transition: height 2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: linear-gradient(to top, var(--thermo-red), #f87171); transition: height 1s cubic-bezier(0.4, 0, 0.2, 1); }
         .bulb { width: 60px; height: 60px; background: var(--thermo-red); border-radius: 50%; margin-top: -30px; border: 5px solid #fff; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 24px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); z-index: 2; }
         #percentComplete { margin-top: 25px; font-weight: 800; font-size: 16px; color: var(--primary); text-transform: uppercase; }
 
@@ -147,13 +147,14 @@
 
         <div class="progress-box">
             <h2>Goal Points</h2>
-            <div class="total-amount" id="currentTotal">0</div>
-            <div class="goal-subtext">of <span id="displayGoal">---</span> Target Points</div>
+            <!-- Changed initial text to Loading so you see it's working -->
+            <div class="total-amount" id="currentTotal" style="font-size: 22px; color: var(--text-muted);">Loading...</div>
+            <div class="goal-subtext">of <span id="displayGoal">...</span> Target Points</div>
             <div class="thermo-wrap">
                 <div class="tube"><div id="barFill" class="fill"></div></div>
                 <div class="bulb">P</div>
             </div>
-            <div id="percentComplete">0% Complete</div>
+            <div id="percentComplete">Checking progress...</div>
         </div>
     </div>
 </div>
@@ -164,7 +165,8 @@
     <div class="modal-content">
         <div style="width: 50px; height: 50px; background: var(--success-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">✓</div>
         <h3>Success!</h3>
-        <p>Entry saved! Updating your total points automatically...</p>
+        <p>Entry saved successfully!</p>
+        <button onclick="closeSuccessModal()" style="background: var(--navy);">Enter Another</button>
     </div>
 </div>
 
@@ -186,28 +188,44 @@
 <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkr53ucLCwVms5PoWsesrw7l-E1OR3yVUIJob--of6LVx-8aV93_qqe4GJvwGY9ghB1g/exec'; 
     const ADMIN_PASSWORD = "GFI2026";
+    let masterGoal = 250000;
 
     window.onload = function() {
         document.getElementById('dateInput').valueAsDate = new Date();
         const savedName = localStorage.getItem('lastAgentName');
         if (savedName) document.getElementById('agentInput').value = savedName;
+        loadDashboardData();
+    };
 
+    function loadDashboardData() {
         fetch(SCRIPT_URL).then(res => res.json()).then(data => {
             const total = data.total || 0;
-            const masterGoal = data.goal || 250000;
+            masterGoal = data.goal || 250000;
             
-            const pct = Math.min((total / masterGoal) * 100, 100).toFixed(1);
-            
-            document.getElementById('displayGoal').innerText = Number(masterGoal).toLocaleString();
-            document.getElementById('currentTotal').innerText = total.toLocaleString();
-            document.getElementById('barFill').style.height = pct + "%";
-            document.getElementById('percentComplete').innerText = pct + "% Complete";
+            updateDisplay(total, masterGoal);
+        }).catch(err => {
+            console.log("Fetch Error");
+            document.getElementById('currentTotal').innerText = "Error Loading";
+        });
+    }
 
-            if (total >= masterGoal) {
-                document.getElementById('congratsOverlay').style.display = 'flex';
-            }
-        }).catch(err => console.log("Fetch Error"));
-    };
+    function updateDisplay(total, goal) {
+        const pct = Math.min((total / goal) * 100, 100).toFixed(1);
+        
+        // Restore font size for number display when loaded
+        const totalEl = document.getElementById('currentTotal');
+        totalEl.style.fontSize = "36px";
+        totalEl.style.color = "var(--navy)";
+        
+        totalEl.innerText = total.toLocaleString();
+        document.getElementById('displayGoal').innerText = Number(goal).toLocaleString();
+        document.getElementById('barFill').style.height = pct + "%";
+        document.getElementById('percentComplete').innerText = pct + "% Complete";
+
+        if (total >= goal) {
+            document.getElementById('congratsOverlay').style.display = 'flex';
+        }
+    }
 
     function openAdmin() { document.getElementById('adminModal').style.display = 'flex'; }
     function closeAdmin() { 
@@ -243,6 +261,7 @@
     }
 
     function hideCongrats() { document.getElementById('congratsOverlay').style.display = 'none'; }
+    function closeSuccessModal() { document.getElementById('successModal').style.display = 'none'; }
 
     document.getElementById('gfiForm').onsubmit = e => {
         e.preventDefault();
@@ -250,7 +269,7 @@
         const agentName = document.getElementById('agentInput').value;
         localStorage.setItem('lastAgentName', agentName);
         btn.disabled = true; 
-        btn.innerText = "Saving...";
+        btn.innerText = "Saving Entry...";
         
         const payload = {
             Date: document.getElementById('dateInput').value,
@@ -263,18 +282,17 @@
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            }
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         })
         .then(res => res.json())
         .then(data => { 
             if (data.result === "success") {
-                // Show success modal, then automatically reload the page after 1.5 seconds so totals update instantly
-                document.getElementById('successModal').style.display = 'flex'; 
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                e.target.Points.value = '';
+                btn.disabled = false;
+                btn.innerText = "Submit To Database";
+                
+                document.getElementById('successModal').style.display = 'flex';
+                loadDashboardData();
             } else {
                 throw new Error(data.message || "Unknown error");
             }
