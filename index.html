@@ -164,8 +164,7 @@
     <div class="modal-content">
         <div style="width: 50px; height: 50px; background: var(--success-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">✓</div>
         <h3>Success!</h3>
-        <p>Amazing progress! Keep that momentum going—you’ve got this!</p>
-        <button onclick="location.reload()" style="background: var(--navy);">Done</button>
+        <p>Entry saved! Updating your total points automatically...</p>
     </div>
 </div>
 
@@ -271,7 +270,11 @@
         .then(res => res.json())
         .then(data => { 
             if (data.result === "success") {
+                // Show success modal, then automatically reload the page after 1.5 seconds so totals update instantly
                 document.getElementById('successModal').style.display = 'flex'; 
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             } else {
                 throw new Error(data.message || "Unknown error");
             }
